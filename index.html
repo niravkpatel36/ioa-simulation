@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Island of Adventures</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}
+#s{position:fixed;inset:0}
+#s video,#s canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;background:#000}
+#s canvas{display:none;z-index:99999}
+#msg{position:fixed;left:0;right:0;bottom:18px;text-align:center;z-index:999999;color:#fff;opacity:.55;
+  font:14px/1.4 -apple-system,"SF Pro Text",system-ui,sans-serif;transition:opacity .6s;pointer-events:none}
+#msg.hide{opacity:0}
+#msg.err{color:#ff8a8f;opacity:1}
+</style></head>
+<body>
+<div id="s"></div>
+<div id="msg">Loading… 0%</div>
+<script src="engine.js"></script>
+<script>
+const eng = new Engine(document.getElementById('s'), true);
+const msg = document.getElementById('msg');
+let touched = false;
+
+// Loading progress, then a faint hint that disappears after the first key/click
+const prog = setInterval(() => {
+  if (eng.errors.length) { msg.className = 'err'; msg.textContent = eng.errors.join(' · '); clearInterval(prog); return; }
+  if (eng.ready()) {
+    clearInterval(prog);
+    msg.textContent = 'Press any key or click to turn sound on  ·  F = fullscreen';
+    if (touched) msg.className = 'hide';
+    return;
+  }
+  const c = Object.values(eng.clips), pct = Math.round(c.reduce((a, x) => a + x.pct, 0) / c.length * 100);
+  msg.textContent = 'Loading… ' + pct + '%';
+}, 200);
+
+function unlock() { eng.unlocked = true; touched = true; if (eng.ready() && !eng.errors.length) msg.className = 'hide'; }
+
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;      // leave browser shortcuts alone
+  const k = e.key.toLowerCase();
+  if (['f', 'm', ' ', 'a', 'w', '0'].includes(k)) e.preventDefault();   // stop space scrolling the page
+  if (e.key !== 'Escape') unlock();
+  if (e.repeat) return;                                   // holding a key does nothing extra
+  if (k === ' ') eng.go('ROWING');
+  else if (k === 'w') eng.go('WAITING');
+  else if (k === 'a') eng.go('ARRIVING');
+  else if (k === '0') eng.go('RESET');
+  else if (k === 'f') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); }
+  else if (k === 'm') eng.sound = !eng.sound;             // bonus: M mutes / unmutes
+});
+addEventListener('pointerdown', unlock, true);
+addEventListener('contextmenu', e => e.preventDefault());
+
+// keep the screen awake
+const wl = () => { try { navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {} };
+wl(); document.addEventListener('visibilitychange', () => !document.hidden && wl());
+
+eng.load();
+</script></body></html>
