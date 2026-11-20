@@ -1,6 +1,6 @@
 /* Three videos stacked on top of each other, all pre-loaded into memory and parked on frame 1.
    Switching = play the next one, and cut to it the moment its first frame is showing. No black, no ghosting. */
-const FILES = { wait: 'videos/wait.mp4', row: 'videos/row.mp4', arrive: 'videos/arrive.mp4' };
+const FILES = { wait: 'wait.mp4', row: 'row.mp4', arrive: 'arrive.mp4' };
 const CLIP = { WAITING: 'wait', ROWING: 'row', ARRIVING: 'arrive', ARRIVED: 'arrive' };
 class Engine {
   constructor(root, audible) {
