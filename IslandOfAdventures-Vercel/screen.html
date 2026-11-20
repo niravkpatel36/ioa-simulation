@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Audience Screen</title><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}
+#s{position:fixed;inset:0}#s video,#s canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;background:#000}#s canvas{display:none;z-index:99999}</style></head>
+<body><div id="s"></div><script src="engine.js"></script><script>
+const eng = new Engine(document.getElementById('s'), true), ch = new BroadcastChannel('ioa');
+const beat = () => ch.postMessage({ type: 'beat', state: eng.state, ready: eng.ready(), errors: eng.errors, unlocked: eng.unlocked, fs: !!document.fullscreenElement });
+function sync(st, sound) { eng.sound = sound;
+  if (st === eng.state) return;
+  if (st === 'ARRIVING' || st === 'ARRIVED') { if (eng.state !== 'ARRIVED') eng.go('ARRIVING'); return; }
+  if (eng.state === 'ARRIVING' || eng.state === 'ARRIVED') eng.go('RESET');
+  if (eng.state !== st) eng.go(st); }
+ch.onmessage = e => { const m = e.data; if (m.type === 'state') { sync(m.state, m.sound); beat(); } };
+eng.onArrived = beat;
+// One click anywhere on this screen = fullscreen + sound on
+addEventListener('click', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); setTimeout(beat, 100); });
+addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('beforeunload', () => ch.postMessage({ type: 'bye' }));
+const wl = () => { try { navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {} }; wl(); document.addEventListener('visibilitychange', () => !document.hidden && wl());
+eng.load().then(() => { ch.postMessage({ type: 'hello' }); beat(); }); setInterval(beat, 1000);
+</script></body></html>
